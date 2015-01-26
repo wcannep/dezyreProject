@@ -1,0 +1,67 @@
+USE medicare;
+
+-- Load staging hai_hospital_stg table
+
+DROP TABLE IF EXISTS hai_hospital_stg;
+CREATE EXTERNAL TABLE hai_hospital_stg (
+ProviderID string,
+HospitalName string,
+Address string,
+City string,
+State string,
+ZipCode string,
+CountyName string,
+PhoneNumber string,
+MeasureName string,
+MeasureID string,
+ComparedToNational string,
+Score string,
+Footnote string,
+MeasureStartDate string,
+MeasureEndDate string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/medicare/hai_hospital_stg';
+
+LOAD DATA LOCAL INPATH "/home/cloudera/datasets/HAI_Hospital.csv" OVERWRITE INTO TABLE hai_hospital_stg;
+
+
+
+-- Load staging hai_state_stg table
+
+DROP TABLE IF EXISTS hai_state_stg;
+CREATE EXTERNAL TABLE hai_state_stg(
+State string,
+MeasureName string,
+MeasureID string,
+Score string,
+Footnote string,
+MeasureStartDate string,
+MeasureEndDate string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/medicare/hai_state_stg';
+
+LOAD DATA LOCAL INPATH "/home/cloudera/datasets/HAI_State.csv" OVERWRITE INTO TABLE hai_state_stg;
+
+
+
+-- Load staging hai_state_prior_yr_stg table
+
+DROP TABLE IF EXISTS hai_state_prior_yr_stg;
+CREATE EXTERNAL TABLE hai_state_prior_yr_stg(
+State string,
+MeasureID string,
+Score string,
+Footnote string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/medicare/hai_state_prior_yr_stg';
+
+LOAD DATA LOCAL INPATH "/home/cloudera/datasets/HAI_State_Prior.csv" OVERWRITE INTO Table hai_state_prior_yr_stg;

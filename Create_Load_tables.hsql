@@ -1,0 +1,106 @@
+USE medicare;
+
+DROP TABLE IF EXISTS hai_hospital;
+CREATE EXTERNAL TABLE hai_hospital (
+ProviderId int, 
+HospitalName string,
+City string, 
+State string, 
+MeasureName string, 
+Score float,
+MeasureStartDate timestamp,
+MeasureEndDate timestamp)
+PARTITIONED BY (measureid string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/medicare/hai_hospital';
+
+DROP TABLE IF EXISTS hai_hospital_cnt_by_state;
+CREATE EXTERNAL TABLE hai_hospital_cnt_by_state (
+State string,
+Participating_hospital_cnt int)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/medicare/hai_hospital_cnt_by_state';
+
+
+set hive.exec.dynamic.partition=true;
+set hive.exec.dynamic.partition.mode=nonstrict;
+
+FROM hai_hospital_stg
+INSERT OVERWRITE TABLE hai_hospital PARTITION(measureid)
+SELECT providerid, 
+hospitalname, 
+city, 
+state, 
+measurename, 
+CAST(score AS float), 
+CAST(measurestartdate AS timestamp),
+Cast(measureenddate AS timestamp),
+measureid
+WHERE measureid LIKE '%SIR'
+AND score <> 'Not Available'
+
+INSERT OVERWRITE TABLE hai_hospital_cnt_by_state
+SELECT state, count(distinct providerid) 
+GROUP BY state;
+
+
+
+-- Create and populate hai_state from hai_state_stg
+
+DROP TABLE IF EXISTS hai_state;
+CREATE EXTERNAL TABLE hai_state(
+state string,
+measurename string,
+measureID string,
+score string,
+measurestartdate timestamp,
+measureenddate timestamp)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/medicare/hai_state';
+
+INSERT OVERWRITE TABLE hai_state
+SELECT state, 
+measurename, 
+measureid, 
+CAST(score AS float),
+CAST(measurestartdate AS timestamp),
+CAST(measureenddate AS timestamp)
+FROM hai_state_stg
+WHERE measureid LIKE '%SIR'
+AND score <> 'Not Available';
+
+
+-- Create and populate hai_state_prior_yr table
+
+DROP TABLE IF EXISTS hai_state_prior_yr;
+CREATE EXTERNAL TABLE hai_state_prior_yr(
+state string,
+measureid string,
+score string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/medicare/hai_state_prior_yr';
+
+INSERT OVERWRITE TABLE hai_state_prior_yr
+SELECT state,
+measureid,
+CAST(score AS float)
+FROM hai_state_prior_yr_stg
+WHERE score <> 'Not Available';
+
+
+
+
+
+

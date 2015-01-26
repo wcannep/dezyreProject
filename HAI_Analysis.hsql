@@ -1,0 +1,36 @@
+USE medicare;
+
+DROP TABLE IF EXISTS hai_analysis;
+CREATE EXTERNAL TABLE hai_analysis(
+
+state string,
+measurename string,
+score float,
+prior_yr_score float,
+measureid string,
+participating_hospital_cnt int)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/medicare/hai_analysis';
+
+INSERT OVERWRITE TABLE hai_analysis
+SELECT s.state, 
+s.measurename,
+s.score, 
+COALESCE(p.score,0),
+s.measureid,
+c.participating_hospital_cnt
+FROM hai_state s
+INNER JOIN hai_hospital_cnt_by_state c
+ON s.state = c.state
+LEFT OUTER JOIN hai_state_prior_yr p
+ON s.state = p.state AND s.measureid = p.measureid
+ORDER BY s.score DESC;
+
+
+
+
+
+
